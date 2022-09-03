@@ -13,6 +13,8 @@ struct asdfmulti {
 int asdffreearr(struct asdfmulti* array); /* Frees a given ASDF Linked List - use where *.strval is statically allocated results in undefined behaviour */
 struct asdfmulti* asdfgenllist(char* str, int* val); /* Pass NULL to unused argument - Returns new linked list head */
 void asdfappendllist(struct asdfmulti* head, char* str, int* val); /* Pass NULL to unused argument */
+struct asdfmulti* asdfgetindex(struct asdfmulti* array, int index); /* Get given index of ASDF Linked List - returns NULL if index is out of range */
+int asdfarrlen(struct asdfmulti* array);
 
 
 /* Important Read Function */

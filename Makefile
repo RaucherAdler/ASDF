@@ -6,14 +6,14 @@ SRC = asdf.c
 target = libasdf
 ifeq ($(OS),Windows_NT)  # Determine File Extension + OS-Specific Clean Command
 	target := $(target).dll
-	CLN := del $(target) 2>nul
+	CLN := del
 else
 	target := $(target).so
-	CLN := rm -f $(target)
+	CLN := rm -f
 endif
 
-ifeq ($(MAKECMDGOALS),debug) # Determine Appropriate Optimization Level
-	CFLAGS += -Og
+ifneq ($(findstring debug,$(MAKECMDGOALS)),) # Determine Appropriate Optimization Level
+	CFLAGS += $(DEBUG_FLAGS)
 else
 	CFLAGS += -O2
 endif
@@ -27,4 +27,4 @@ debug: CFLAGS += $(DEBUG_FLAGS)
 debug: all
 
 clean:
-	@$(CLN)
+	$(CLN) $(target)

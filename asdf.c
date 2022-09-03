@@ -30,19 +30,20 @@ int asdfgetval(char* filename, char* valname, struct asdfmulti* retval) { /* Mai
     }
 
     if (retval == NULL) {
-        retval = malloc(sizeof(struct asdfmulti));
-        retval->arrval = NULL;
-        retval->strval = NULL;
-        retval->type = -1;
+        free(sstr);
+        return(0);
     }
 
     switch (retval->type) {
-        case 2:
-            sprintf(sstr, "[%s\n", valname);
+        case -1:
+            strcpy(sstr, valname);
             break;
         case 0:
         case 1:
             sprintf(sstr, "%s = ", valname);
+            break;
+        case 2:
+            sprintf(sstr, "[%s\n", valname);
             break;
     }
 
@@ -262,6 +263,32 @@ int asdfprintarr_ul(struct asdfmulti* array, char* delim) { /* Print ASDF Linked
 }
 
 
+struct asdfmulti* asdfgetindex(struct asdfmulti* array, int index) { /* Get given index of ASDF Linked List - returns NULL if index is out of range */
+    struct asdfmulti* cur = array;
+    int i;
+    for (i=0;i<=index;i++) {
+        if (cur->arrval == NULL) {
+            if (i != index) cur = NULL;
+            break;
+        } else {
+            cur = cur->arrval;
+        }
+    }
+    return(cur);
+}
+
+
+int asdfarrlen(struct asdfmulti* array) {
+    int i = 0;
+    struct asdfmulti* cur = array;
+    while (cur != NULL) {
+        i++;
+        cur = cur->arrval;
+    }
+    return(i);
+}
+
+
 /* Wrappers for reading */
 int* asdfgetint(char* filename, char* valname) { /* Returns NULL pointer if not found, else returns pointer to result and must be freed */
     struct asdfmulti ams;
@@ -320,14 +347,11 @@ int asdfassignval(char* filename, char* valname, struct asdfmulti* inval) { /* A
     struct asdfmulti* cur;
     char tname[L_tmpnam] = {0};
 
-    for (j=0;j<L_tmpnam-1;j++) { /* Substitute for tmpnam */
+    for (j=0;j<=L_tmpnam-5;j++) { /* Substitute for tmpnam */
         tname[j] = 'a' + (rand() % 26);
     }
+    strcat(tname, ".tmp");
 
-#ifdef WIN32
-    sscanf(tname, "\\%s", tname);
-    strcat(tname, "tmp");
-#endif
     tfp = fopen(tname, "w+b");
     if (tfp == NULL) {
         free(sstr);
@@ -416,24 +440,24 @@ crarr:
                         fprintf(tfp, "%s", sstr);
                         break;
                     case 0:
-                        for (j=0;j<o+4;j++) {
-                            fputc(' ', tfp);
-                        }
                         if (cur == inval) {
-                            fprintf(tfp, "%i\n", cur->ival);
-                        } else {
                             fprintf(tfp, "%s%i\n", sstr, cur->ival);
+                        } else {
+                            for (j=0;j<o+4;j++) {
+                                fputc(' ', tfp);
+                            }
+                            fprintf(tfp, "%i\n", cur->ival);
                         }
                         break;
                     case 1:
                         if (cur->strval != NULL) {
-                            for (j=0;j<o+4;j++) {
-                                fputc(' ', tfp);
-                            }
                             if (cur == inval) {
-                                fprintf(tfp, "\"%s\"\n", cur->strval);
+                                fprintf(tfp, "%s\"%s\"\n", sstr, cur->strval);
                             } else {
-                                fprintf(tfp, "%s%s\n", sstr, cur->strval);
+                                for (j=0;j<o+4;j++) {
+                                    fputc(' ', tfp);
+                                }
+                                fprintf(tfp, "\"%s\"\n", cur->strval);
                             }
                         }
                         break;
@@ -477,14 +501,11 @@ int asdfappendarr(char* filename, char* valname, struct asdfmulti* inval) { /* A
     struct asdfmulti* cur = NULL;
     char tname[L_tmpnam] = {0};
 
-    for (j=0;j<L_tmpnam-1;j++) { /* Substitute for tmpnam */
+    for (j=0;j<=L_tmpnam-5;j++) { /* Substitute for tmpnam */
         tname[j] = 'a' + (rand() % 26);
     }
+    strcat(tname, ".tmp");
 
-#ifdef WIN32 /* Edit path so it creates the file locally - doesn't need elevated priviliges */
-    sscanf(tname, "\\%s", tname);
-    strcat(tname, "tmp");
-#endif
     tfp = fopen(tname, "w+b");
     if (tfp == NULL) {
         free(sstr);
