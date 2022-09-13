@@ -35,14 +35,14 @@ int asdfgetval(char* filename, char* valname, struct asdfmulti* retval) { /* Mai
     }
 
     switch (retval->type) {
-        case -1:
+        case T_TBD:
             strcpy(sstr, valname);
             break;
-        case 0:
-        case 1:
+        case T_INT:
+        case T_STR:
             sprintf(sstr, "%s = ", valname);
             break;
-        case 2:
+        case T_ARR:
             sprintf(sstr, "[%s\n", valname);
             break;
     }
@@ -67,22 +67,22 @@ int asdfgetval(char* filename, char* valname, struct asdfmulti* retval) { /* Mai
                 memset(lnbuf, 0, 1024);
                 continue;
             }
-            if (((r - lnbuf) == o) || ((retval->type = -1) && ((r - lnbuf) == o+1) && (lnbuf[o] != '"'))) {
+            if (((r - lnbuf) == o) || ((retval->type = T_TBD) && ((r - lnbuf) == o+1) && (lnbuf[o] != '"'))) {
 parsesw:
                 switch (retval->type) {
-                    case (0):
+                    case T_TBD: /* Type inference */
+                        retval->type = (2 * (lnbuf[o] == '[')) + (lnbuf[o] == '"');
+                        goto parsesw;
+                    case T_INT:
                         sscanf(lnbuf, "%*[^=]= %i[^\n]", &retval->ival);
                         break;
-                    case (1):
+                    case T_STR: 
                         retval->strval = calloc((strlen(lnbuf) - strlen(sstr) - 1), sizeof(char));
                         sscanf(lnbuf, "%*[^=]= \"%[^\"]", retval->strval);
                         break;
-                    case (2):
+                    case T_ARR:
                         i = 1;
                         break;
-                    case (-1): /* Type inference */
-                        retval->type = (2 * (lnbuf[o] == '[')) + (lnbuf[o] == '"');
-                        goto parsesw;
                 }
             } else {
                 o = 0;
@@ -107,11 +107,11 @@ parsesw:
                     cur->strval = NULL;
                 }
                 if (lnbuf[o] == '"') { /* Will need to account for tabs */
-                    cur->type = 1;
+                    cur->type = T_STR;
                     cur->strval = calloc((strlen(lnbuf) - 1), sizeof(char));
                     sscanf(lnbuf, "%*[^\"]\"%[^\"]", cur->strval);
                 } else {
-                    cur->type = 0;
+                    cur->type = T_INT;
                     sscanf(lnbuf, "%*[^0123456789]%i[^\n]", &cur->ival); /* 0..9 over 0-9 for older compiler compatibility*/
                 }
                 if (retval->arrval == NULL) {
@@ -154,7 +154,7 @@ int asdffreearr(struct asdfmulti* array) { /* Frees A given ASDF Linked List */
 
 struct asdfmulti* asdfgenllist(char* str, int* val) {
     struct asdfmulti* arr = malloc(sizeof(struct asdfmulti));
-    arr->type = 2;
+    arr->type = T_ARR;
     if ((void*) str != (void*) val) {
         arr->arrval = malloc(sizeof(struct asdfmulti));
         arr->arrval->arrval = NULL;
@@ -162,11 +162,11 @@ struct asdfmulti* asdfgenllist(char* str, int* val) {
         arr->arrval = NULL;
     }
     if (str != NULL) {
-        arr->arrval->type = 1;
+        arr->arrval->type = T_STR;
         arr->arrval->strval = calloc(strlen(str)+1, sizeof(char));
         strcpy(arr->arrval->strval, str);
     } else if (val != NULL) {
-        arr->arrval->type = 0;
+        arr->arrval->type = T_INT;
         arr->arrval->ival = *val;
     }
     return(arr);
@@ -177,7 +177,7 @@ void asdfappendllist(struct asdfmulti* head, char* str, int* val) {
 
     if (head == NULL) {
         head = malloc(sizeof(struct asdfmulti));
-        head->type = 2;
+        head->type = T_ARR;
         head->arrval = NULL;
     }
     cur = head;
@@ -191,11 +191,11 @@ void asdfappendllist(struct asdfmulti* head, char* str, int* val) {
     cur->arrval = malloc(sizeof(struct asdfmulti));
     cur = cur->arrval;
     if (str != NULL) {
-        cur->type = 1;
+        cur->type = T_STR;
         cur->strval = calloc(strlen(str)+1, sizeof(char));
         strcpy(cur->strval, str);
     } else if (val != NULL) {
-        cur->type = 0;
+        cur->type = T_INT;
         cur->ival = *val;
     }
     cur->arrval = NULL;
@@ -216,15 +216,17 @@ int asdfprintarr_ol(struct asdfmulti* array) { /* Print ASDF Linked List in orde
 
     while (cur != NULL) {
         switch (cur->type) {
-            case (0):
+            case T_INT:
                 printf("%i. %i\n", i, cur->ival);
                 i++;
                 break;
-            case (1):
+            case T_STR:
                 if (cur->strval != NULL) {
                     printf("%i. %s\n", i, cur->strval);
                 }
                 i++;
+                break;
+            default:
                 break;
         }
         cur = cur->arrval;
@@ -248,13 +250,15 @@ int asdfprintarr_ul(struct asdfmulti* array, char* delim) { /* Print ASDF Linked
 
     while (cur != NULL) {
         switch (cur->type) {
-            case (0):
+            case T_INT:
                 printf("%s %i\n", delim, cur->ival);
                 break;
-            case (1):
+            case T_STR:
                 if (cur->strval != NULL) {
                     printf("%s %s\n",delim, cur->strval);
                 }
+                break;
+            default:
                 break;
         }
         cur = cur->arrval;
@@ -295,7 +299,7 @@ int* asdfgetint(char* filename, char* valname) { /* Returns NULL pointer if not 
     int* p = NULL;
     ams.arrval = NULL;
     ams.strval = NULL;
-    ams.type = 0;
+    ams.type = T_INT;
     if (asdfgetval(filename, valname, &ams) != 0) {
         p = malloc(sizeof(int));
         *p = ams.ival;
@@ -309,7 +313,7 @@ char* asdfgetstr(char* filename, char* valname) { /* Returns NULL pointer if not
     struct asdfmulti ams;
     ams.arrval = NULL;
     ams.strval = NULL;
-    ams.type = 1;
+    ams.type = T_STR;
     if (asdfgetval(filename, valname, &ams) != 0) {
         retstr = malloc(strlen(ams.strval)+1);
         strcpy(retstr, ams.strval);
@@ -323,7 +327,7 @@ char* asdfgetstr(char* filename, char* valname) { /* Returns NULL pointer if not
 
 struct asdfmulti* asdfgetarr(char* filename, char* valname) { /* Needs to free returned value if value is found - Returns NULL if value isn't found */
     struct asdfmulti* array = malloc(sizeof(struct asdfmulti));
-    array->type = 2;
+    array->type = T_ARR;
     array->arrval = NULL;
     array->strval = NULL;
     if (asdfgetval(filename, valname, array) == 0) {
@@ -369,7 +373,7 @@ int asdfassignval(char* filename, char* valname, struct asdfmulti* inval) { /* A
         }
     }
     switch (inval->type) {
-        case 2:
+        case T_ARR:
             sprintf(sstr, "[%s\n", valname);
             break;
         default:
@@ -393,19 +397,24 @@ int asdfassignval(char* filename, char* valname, struct asdfmulti* inval) { /* A
             }
         }
         if ((r - lnbuf) == (int) o) { /* Cast to prevent (int) and (unsigned int) comparison */
+swst:
             switch (inval->type) {
-                case 2:
-                    i = 2;
-                    o = 0;
-                    continue;
-                case 0:
+                case T_TBD:
+                    if (lnbuf[strlen(lnbuf-2)] == '"') {
+                        inval->type = T_STR;
+                        goto swst;
+                    } else {
+                        inval->type = T_INT;
+                    }
+                    break;
+                case T_INT:
                     for (j=0;j<o;j++) { /* Match indentation */
                         fputc(' ', tfp);
                     }
                     fprintf(tfp, "%s%i\n", sstr, inval->ival);
                     i = 1;
                     break;
-                case 1:
+                case T_STR:
                     if (inval->strval != NULL) {
                         for (j=0;j<o;j++) {
                             fputc(' ', tfp);
@@ -414,6 +423,10 @@ int asdfassignval(char* filename, char* valname, struct asdfmulti* inval) { /* A
                         i = 1;
                     }
                     break;
+                case T_ARR:
+                    i = 2;
+                    o = 0;
+                    continue;
 
             }
         }
@@ -436,10 +449,9 @@ crarr:
             cur = inval;
             while (cur != NULL) {
                 switch (cur->type) {
-                    case 2:
-                        fprintf(tfp, "%s", sstr);
+                    case T_TBD:
                         break;
-                    case 0:
+                    case T_INT:
                         if (cur == inval) {
                             fprintf(tfp, "%s%i\n", sstr, cur->ival);
                         } else {
@@ -449,7 +461,7 @@ crarr:
                             fprintf(tfp, "%i\n", cur->ival);
                         }
                         break;
-                    case 1:
+                    case T_STR:
                         if (cur->strval != NULL) {
                             if (cur == inval) {
                                 fprintf(tfp, "%s\"%s\"\n", sstr, cur->strval);
@@ -461,10 +473,13 @@ crarr:
                             }
                         }
                         break;
+                    case T_ARR:
+                        fprintf(tfp, "%s", sstr);
+                        break;
                     }
                 cur = cur->arrval;
             }
-        if (inval->type == 2) {
+        if (inval->type == T_ARR) {
             fputs("]\n", tfp);
         }
         i = 1;
@@ -555,13 +570,15 @@ int asdfappendarr(char* filename, char* valname, struct asdfmulti* inval) { /* A
                 cur = inval;
                 while (cur != NULL) {
                     switch (inval->type) {
-                        case 0:
+                        case T_INT:
                             fprintf(tfp, "%i\n", cur->ival);
                             break;
-                        case 1:
+                        case T_STR:
                             if (inval->strval != NULL) {
                                 fprintf(tfp, "\"%s\"\n", cur->strval);
                             }
+                            break;
+                        default:
                             break;
                     }
                     cur = cur->arrval;
@@ -591,22 +608,29 @@ int asdfappendarr(char* filename, char* valname, struct asdfmulti* inval) { /* A
 
 /* Wrappers for writing */
 int asdfassignstr(char* filename, char* valname, char* instr) {
-    struct asdfmulti tmp;
-    int i = 0;
-    tmp.type = 1;
+    struct asdfmulti tmp = {T_STR, 0, NULL, NULL};
     tmp.strval = instr;
-    tmp.arrval = NULL;
-    i = asdfassignval(filename, valname, &tmp);
-    return(i);
+    return(asdfassignval(filename, valname, &tmp));
 }
 
 
 int asdfassignint(char* filename, char* valname, int inint) {
-    struct asdfmulti tmp;
-    int i = 0;
-    tmp.type = 0;
+    struct asdfmulti tmp = {T_INT, 0, NULL, NULL};
     tmp.ival = inint;
-    tmp.arrval = NULL;
-    i = asdfassignval(filename, valname, &tmp);
-    return(i);
+    return(asdfassignval(filename, valname, &tmp));
 }
+
+
+int asdfappendstr(char* filename, char* valname, char* instr) {
+    struct asdfmulti tmp = {T_STR, 0, NULL, NULL};
+    tmp.strval = instr;
+    return(asdfappendarr(filename, valname, &tmp));
+}
+
+
+int asdfappendint(char* filename, char* valname, int inint) {
+    struct asdfmulti tmp = {T_INT, 0, NULL, NULL};
+    tmp.ival = inint;
+    return(asdfappendarr(filename, valname, &tmp));
+}
+

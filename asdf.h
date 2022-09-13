@@ -2,7 +2,12 @@
 #define _H_ASDF_
 
 struct asdfmulti {
-    int type;
+    enum {
+        T_TBD,
+        T_INT,
+        T_STR,
+        T_ARR
+    } type;
     int ival;
     char* strval;
     struct asdfmulti* arrval;
@@ -38,5 +43,7 @@ int asdfappendarr(char* filename, char* valname, struct asdfmulti* inval); /* Ap
 /* Write Wrappers */
 int asdfassignstr(char* filename, char* valname, char* instr);
 int asdfassignint(char* filename, char* valname, int inint);
+int asdfappendstr(char* filename, char* valname, char* instr);
+int asdfappendint(char* filename, char* valname, int inint);
 
 #endif
