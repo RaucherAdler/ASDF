@@ -29,7 +29,7 @@ Arrays are also supported and follow the following syntax:
     263789
 ]
 ```
-It should be noted that indentation doesn't matter given its ASCII tabs or spaces, though there should be no trailing spaces in array key names.\
+It should be noted that indentation doesn't matter given its ASCII tabs or spaces, though there should be no trailing spaces in array key names.
 
 
 ### TO-DO
