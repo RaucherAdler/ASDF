@@ -2,7 +2,7 @@
 
 ### About 
 This is a library I have written to simply serialize data in a quick and convenient manner.\
-The syntax isn't too far from that of JSON and other serialization formats, but its got its quirks - some good, some bad perhaps.
+The syntax isn't too far from that of JSON and other serialization formats.
 
 
 ### Compile From Source
@@ -17,7 +17,7 @@ The library internally uses a Linked List structure which could potentially be a
 
 
 ### Syntax
-The syntax is rather simple (as intended) - scalar values (of type string or integer) can be assigned as follows:
+The syntax is rather simple - scalar values (of type string or integer) can be assigned as follows:
 ```
 key = "this is a string"
 int = 86278
@@ -29,8 +29,7 @@ Arrays are also supported and follow the following syntax:
     263789
 ]
 ```
-It should be noted that indentation doesn't matter given its ASCII tabs or spaces, though there should be no trailing spaces.\
-ASDF files should be edited as a UNIX-type file, using LF endings as opposed to CRLF endings.
+It should be noted that indentation doesn't matter given its ASCII tabs or spaces, though there should be no trailing spaces in array key names.\
 
 
 ### TO-DO

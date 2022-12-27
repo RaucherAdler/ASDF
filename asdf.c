@@ -75,7 +75,7 @@ parsesw:
                         goto parsesw;
                     case T_INT:
                         retval->value = calloc(1, sizeof(int)); 
-                        sscanf(lnbuf, "%*[^=]= %i[^\n]", (int*) retval->value);
+                        sscanf(lnbuf, "%*[^=]= %i[^\r\n]", (int*) retval->value);
                         break;
                     case T_STR: 
                         retval->value = calloc((strlen(lnbuf) - strlen(sstr) - 1), sizeof(char));
@@ -114,7 +114,7 @@ parsesw:
                 } else {
                     cur->type = T_INT;
                     cur->value = calloc(1, sizeof(int)); 
-                    sscanf(lnbuf, "%*[^0123456789]%i[^\n]", (int*) cur->value); /* 0..9 over 0-9 for older compiler compatibility */
+                    sscanf(lnbuf, "%*[^0123456789]%i[^\r\n]", (int*) cur->value); /* 0..9 over 0-9 for older compiler compatibility */
                 }
                 if (retval->next == NULL) {
                     retval->next = cur;
