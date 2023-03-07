@@ -46,6 +46,6 @@ You can find me here:
 
 Email: raucheradler@gmail.com
 
-Discord: [My Server](https://discord.gg/6GFQcFHjSK) | Raucher Adler#2085
+Discord: Raucher Adler#2085
 
 Git: [GitLab](https://gitgud.io/RaucherAdler) | [GitHub](https://www.github.com/RaucherAdler)
