@@ -40,11 +40,11 @@ As of now, I have a number of features that I may potentially add in the future:
 - Associative Arrays
 - Inline Arrays
 - Variable Referencing
-- UTF-8 Support
+- UTF-8 Support\
 I plan to largely rewrite this library eventually as there's a number of things I am dissatisfied with - to add the features listed above, to fix some syntactic issues, among a host of other issues I have presently.
 
 
 ### Contact Me
-Email: raucheradler@gmail.com
-Discord: Raucher Adler#2085
+Email: raucheradler@gmail.com\
+Discord: Raucher Adler#2085\
 Git: [GitLab](https://gitgud.io/RaucherAdler) | [GitHub](https://www.github.com/RaucherAdler)
